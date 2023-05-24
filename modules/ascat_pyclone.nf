@@ -98,10 +98,10 @@ process ascat_pyclone {
 
                 sed -i 's, ,\\t,g' tmp_maf
                 if ! [ -z \$cellularity ]; then
-                    create_input4pyclone.py -as \${ascat_file} -c \${cellularity} -m tmp_maf -o \${patient}.pyclone.tsv --skip_filter
+                    create_input4pyclone.py -as \${ascat_file} -c \${cellularity} -m tmp_maf -o \${patient}.pyclone.tsv 
                 else
                     ascat_tumor_estimate="\$(ls results/variant_calling/ascat/\${tumor}_vs_\${normal}/*.purityploidy.txt)"
-                    create_input4pyclone.py -as \${ascat_file} -m tmp_maf -o \${patient}.pyclone.tsv -ac \${ascat_tumor_estimate} --skip_filter
+                    create_input4pyclone.py -as \${ascat_file} -m tmp_maf -o \${patient}.pyclone.tsv -ac \${ascat_tumor_estimate} 
                 fi
                 
             done
