@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import pyranges
 
-from utils import read_maf, filter_maf4tmb
+from utils import read_maf
 
 
 def _parse_args():

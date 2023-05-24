@@ -168,47 +168,12 @@
                 }
             }
         },
-        "databases": {
-            "title": "Public databases to use",
-            "type": "object",
-            "fa_icon": "fab fa-databases-tracker",
-            "description": "Select public databases",
-            "help_text": "Updated public databases are essential for proper functional annotations. Update frequently your databases.",
-            "required": [
-                "annovar_db",
-                "funcotator_germline_db",
-                "funcotator_somatic_db"
-            ],
-            "properties": {
-                "annovar_db": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "description": "Path to the folder containing annovar databases, e.g. humandb",
-                    "fa_icon": "fas fa-folder-anno-db"
-                },
-                "funcotator_germline_db": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "description": "Path to the folder containing funcotator germline databases",
-                    "fa_icon": "fas fa-folder-anno-db"
-                },
-                "funcotator_somatic_db": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "description": "Path to the folder containing funcotator germline databases",
-                    "fa_icon": "fas fa-folder-anno-db"
-                }
-            }
-        },
         "generic_options": {
             "title": "Generic options",
             "type": "object",
             "fa_icon": "fas fa-file-import",
             "description": "Less common options for the pipeline, typically set in a config file.",
             "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
-            "required": [
-                "annovar_software_folder"
-            ],
             "properties": {
                 "help": {
                     "type": "boolean",
@@ -342,9 +307,6 @@
         },
         {
             "$ref": "#/definitions/max_job_request_options"
-        },
-        {
-            "$ref": "#/definitions/databases"
         },
         {
             "$ref": "#/definitions/generic_options"
