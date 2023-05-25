@@ -5,11 +5,31 @@
 */
 
 
+def isdirectory(input) {
+  def file = new File(input)
+  if (file.isDirectory()) {
+    return true
+  }else{
+    return false
+  }
+}
+
+def isfile(input) {
+  def file = new File(input)
+  if (file.isFile()) {
+    return true
+  }else{
+    return false
+  }
+}
+
 process ascat_pyclone {
     tag "ascat_pyclone"
     input:
         file(samp)
         file(conf)
+    output:
+        file()
     script:
     """     
         header="\$(awk -F ',' 'BEGIN{getline; printf "%s", \$1; for(i=2;i<=NF-2;i++) printf ",%s", \$i; print "";}' ${samp})" # get header for sarek input file
@@ -63,7 +83,7 @@ process ascat_pyclone {
                 tumor="\$(awk -F ',' '{if(\$1 == "'"\$patient"'" && \$3 == 1 && \$NF == "'"\$selectedmaf"'") out = \$4}END{print out}' ${samp})"
                 normal="\$(awk -F ',' '{if(\$1 == "'"\$patient"'" && \$3 == 0) out = \$4}END{print out}' ${samp})"
                 tumor_bam="\$(awk -F ',' '{if(\$1 == "'"\$patient"'" && \$3 == 1 && \$NF == "'"\$selectedmaf"'") out = \$6}END{print out}' ${samp})"
-                name=\$tumor
+                name=\$patient
                 
                 # create pyclone input file
                 ascat_file="\$(ls results/variant_calling/ascat/\${tumor}_vs_\${normal}/*cnvs.txt)"
