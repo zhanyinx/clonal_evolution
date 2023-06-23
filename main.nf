@@ -19,6 +19,16 @@ def checkPathParamList = [
 
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
 
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    PARAMETERS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+params.date = new java.util.Date().format('yyMMdd')
+params.ascat_genome = params.build
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     NAMED WORKFLOW FOR PIPELINE
@@ -34,16 +44,11 @@ process help {
     """
     echo "Usage: nextflow run main.nf -c nextflow.config"
     echo ""
-    echo "This pipeline performs whole exome sequencing clinical annotation (snp, indel, cnv)."
+    echo "Pipeline to perform clonal evolution given maf file (GATK format) and cram/bam files corresponding to the samples."
     echo ""
     echo "Options:"
-    echo "  --input samplesheet.csv                      CSV file with 4 columns: patient, tumor_tissue, sample_file, sample_type." 
-    echo "                                               Available sample_type: somatic, germline and cnv. For somatic and germline" 
-    echo "                                               vcf.gz file is accepted for sample_file. For CNV, either cnr from CNVkit or" 
-    echo "                                               vcf.gz file from dragen is accepted." 
-    echo "                                               For available tumor type, checkout https://github.com/zhanyinx/variantalker/blob/main/README.md" 
-    echo "  --pipeline <pipeline>                        The pipeline used to generate the input data (options: 'Sarek', 'DRAGEN'"
-    echo "                                               or 'Iontorrent' (only SNP/INDEL), default: 'Sarek')." 
+    echo "  --input samplesheet.csv                      CSV file with the following columns:" 
+    echo "                                               patient,sex,status,sample,lane,cram,crai,cellularity,maf" 
     echo ""
     """
 }
