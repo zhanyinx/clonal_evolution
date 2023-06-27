@@ -1,8 +1,12 @@
 process convert2citup{
+    cpus '1'
+    errorStrategy 'retry'
+    maxRetries = 3
+    memory { 1.GB * task.attempt }
     input:
-        file(pyclone)
+        tuple val(patient), file(pyclone)
     output:
-        tuple file("*/citup_frequencies.tsv"), file("*/citup_clusters.tsv")
+        tuple val(patient), file("*/citup_frequencies.tsv"), file("*/citup_clusters.tsv")
         file("*/mut_sample_clus.txt")
     script:
         """
@@ -13,21 +17,17 @@ process convert2citup{
 
 
 process citup{
-    cpus 10
+    cpus 2
     maxRetries = 2
     memory { 5.GB * task.attempt }
+    errorStrategy 'retry'
+    publishDir "${params.outdir}/${patient}/citup", mode: "copy"
     input:
-        tuple file(frequency), file(clusters)
+        tuple val(patient), file(frequency), file(clusters)
     output:
-        file("*.h5")
+        tuple val(patient), file("*.h5")
     script:
         """
-        outname="\$(dirname $frequency)"
-        # create output folder
-        if ! [ -d ${launchDir}/${params.outdir}/${params.date}/\${outname}/citup/ ]; then
-            mkdir -p ${launchDir}/${params.outdir}/${params.date}/\${outname}/citup/
-        fi
-        run_citup_qip.py $frequency $clusters \$outname.h5 --submit local
-        cp \$outname.h5 ${launchDir}/${params.outdir}/${params.date}/\$outname/citup
+        run_citup_qip.py $frequency $clusters ${patient}.h5 --submit local
         """
 }

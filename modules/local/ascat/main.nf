@@ -1,5 +1,6 @@
 
 process ASCAT {
+    publishDir "${params.outdir}/${patient}/ASCAT", mode: "copy"
     cpus '4'
     errorStrategy 'retry'
     maxRetries = 2
@@ -193,6 +194,10 @@ process ASCAT {
 }
 
 process generate_ascat_loci {
+    cpus '1'
+    errorStrategy 'retry'
+    maxRetries = 3
+    memory { 1.GB * task.attempt }
     label 'process_single'
     input:
         file(loci)
@@ -208,6 +213,10 @@ process generate_ascat_loci {
 }
 
 process generate_ascat_alleles {
+    cpus '1'
+    errorStrategy 'retry'
+    maxRetries = 3
+    memory { 1.GB * task.attempt }
     label 'process_single'
     input:
         file(alleles)
@@ -224,6 +233,10 @@ process generate_ascat_alleles {
 
 
 process generate_ascat_rt {
+    cpus '1'
+    errorStrategy 'retry'
+    maxRetries = 3
+    memory { 1.GB * task.attempt }
     label 'process_single'
     input:
         file(rt)
@@ -240,6 +253,10 @@ process generate_ascat_rt {
 
 
 process generate_ascat_gc {
+    cpus '1'
+    errorStrategy 'retry'
+    maxRetries = 3
+    memory { 1.GB * task.attempt }
     label 'process_single'
     input:
         file(gc)

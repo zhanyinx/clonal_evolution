@@ -1,5 +1,10 @@
 
 process generate_pyclone{
+    cpus '1'
+    errorStrategy 'retry'
+    maxRetries = 3
+    memory { 1.GB * task.attempt }
+    publishDir "${params.outdir}/${patient}/pyclone", mode: "copy"
     input:
         tuple val(patient), path(mafs), val(cellularity), path(crams), path(crais), path(pluriploidy), path(cnvs)
     output:
@@ -61,6 +66,11 @@ process generate_pyclone{
 
 
 process pyclone{
+    cpus '1'
+    errorStrategy 'retry'
+    maxRetries = 3
+    memory { 1.GB * task.attempt }
+    publishDir "${params.outdir}/${patient}/pyclone", mode: "copy"
     input:
         tuple val(patient), path(pyclone)
     output:
@@ -68,7 +78,7 @@ process pyclone{
     script:
     """
         # run pyclone
-        pyclone-vi fit -i ${pyclone} -o ${patient}.pyclone.h5 -c 40 -d beta-binomial -r 20
+        pyclone-vi fit -i ${pyclone} -o ${patient}.pyclone.h5 -c ${params.num_clusters} -d beta-binomial -r ${params.num_restarts}
         pyclone-vi write-results-file -i ${patient}.pyclone.h5 -o ${patient}.pyclone.output.tsv
     """
 }
