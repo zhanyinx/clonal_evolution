@@ -13,6 +13,7 @@ include {generate_pyclone; pyclone} from '../modules/local/pyclone/main.nf'
 include {ASCAT; generate_ascat_loci; generate_ascat_alleles; generate_ascat_rt; generate_ascat_gc} from '../modules/local/ascat/main.nf'
 include {SAMTOOLS_CONVERT as BAM_TO_CRAM} from '../modules/nf-core/samtools/convert/main.nf'
 include {convert2citup; citup} from '../modules/local/citup/main.nf'
+include {timescape} from '../modules/local/timescape/main.nf'
 
 
 /*
@@ -77,9 +78,9 @@ workflow CLONAL_EVOLUTION {
     ASCAT(cram_variant_calling_pair, generate_ascat_alleles.out.first(), generate_ascat_loci.out.first(), Channel.fromPath(params.target).first(), Channel.fromPath(params.fasta).first(), generate_ascat_gc.out.first(), generate_ascat_rt.out.first())
     generate_pyclone(ASCAT.out.cram.groupTuple())
     pyclone(generate_pyclone.out)
-    // convert2citup(ascat_pyclone.out)
-    // citup(convert2citup.out[0])
-    
+    convert2citup(pyclone.out)
+    citup(convert2citup.out[0])
+    timescape(citup.out, convert2citup.out[1], pyclone.out)
 }
 
 
