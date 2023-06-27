@@ -51,30 +51,28 @@ clonal_evolution takes as input a csv samplesheet with 9 columns (very similar t
 
 __IMPORTANT: HEADER is required__ 
 
-patient,sex,status,sample,cram,crai,cellularity,maf
-
 | patient        | sex | status | sample   | cram or bam | crai or bai  | cellularity  | maf       |
 | -------------- | --- | ------ | -------- | ----------- | ------------ | ------------ | --------- |
 | patient1       | XX  | 1      | sampleid | path2/cram  | path2/crai   | 0.1          | path2/maf |
 | .....          | ... | ...... | ........ | ......      | .....        | .....        | ...       |
 
-where
 
-patient: patient id
 
-sex: sex of the patient (XX or XY)
+- patient: patient id
 
-status: tumor (1) or normal (0)
+- sex: sex of the patient (XX or XY)
 
-sample: sample id
+- status: tumor (1) or normal (0)
 
-cram (bam): cram (or bam) file from the sample
+- sample: sample id
 
-crai (bai): index. of cram (bam)
+- cram (bam): cram (or bam) file from the sample
 
-cellularity: if available, put the cellularity (number between 0 and 1) from histology. Alternatively leave it empty.
+- crai (bai): index. of cram (bam)
 
-maf: annotated vcf, output of variantalker
+- cellularity: if available, put the cellularity (number between 0 and 1) from histology. Alternatively leave it empty.
+
+- maf: annotated vcf, output of variantalker
 
 ## Output
 
