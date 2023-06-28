@@ -1,6 +1,5 @@
 
 process ASCAT {
-    publishDir "${params.outdir}/${patient}/ASCAT", mode: "copy"
     cpus '4'
     errorStrategy 'retry'
     maxRetries = 2
@@ -20,7 +19,7 @@ process ASCAT {
     path(rt_file)   // optional
 
     output:
-    tuple val(meta.patient), val(meta.maf), val(meta.cellularity), path("${input_tumor}"), path("${index_tumor}"), path("*purityploidy.txt"),  path("*cnvs.txt"),          emit: cram
+    tuple val(meta.patient), val(meta.sex), val(meta.maf), val(meta.cellularity), path("${input_tumor}"), path("${index_tumor}"), path("*purityploidy.txt"),  path("*cnvs.txt"),          emit: cram
 
     when:
     task.ext.when == null || task.ext.when

@@ -6,7 +6,7 @@ process generate_pyclone{
     memory { 1.GB * task.attempt }
     publishDir "${params.outdir}/${patient}/pyclone", mode: "copy"
     input:
-        tuple val(patient), path(mafs), val(cellularity), path(crams), path(crais), path(pluriploidy), path(cnvs)
+        tuple val(patient), val(sex), path(mafs), val(cellularity), path(crams), path(crais), path(pluriploidy), path(cnvs)
     output:
        tuple val(patient), path("*.pyclone.tsv")
     script:
@@ -21,6 +21,7 @@ process generate_pyclone{
         IFS=' ' read -r -a crais <<< "$crais"
         IFS=' ' read -r -a pluriploidy <<< "$pluriploidy"
         IFS=' ' read -r -a cnvs <<< "$cnvs"
+        IFS=' ' read -r -a sexes <<< "$sex"
 
         for index in \${!mafs[@]}; do
             patientmaf=\${mafs[\$index]}
@@ -54,10 +55,12 @@ process generate_pyclone{
             done
 
             sed -i 's, ,\\t,g' tmp_maf
+            sex=`echo \${sexes[\$index]}  | sed 's,\\[,,g' | sed 's,\\],,g' | sed 's/,//g'`
             if [[ \${cellularity[\$index]} =~ \$re ]] ; then
-                create_input4pyclone.py -as \${cnvs[\$index]} -c \${cellularity[\$index]} -m tmp_maf -o ${patient}.pyclone.tsv 
+                cell=`echo \${cellularity[\$index]}   | sed 's,\\[,,g' | sed 's,\\],,g' | sed 's/,//g'`
+                create_input4pyclone.py -as \${cnvs[\$index]} -c \${cell} -m tmp_maf -o ${patient}.pyclone.tsv -s \${sex} 
             else
-                create_input4pyclone.py -as \${cnvs[\$index]} -m tmp_maf -o ${patient}.pyclone.tsv -ac \${pluriploidy[\$index]} 
+                create_input4pyclone.py -as \${cnvs[\$index]} -m tmp_maf -o ${patient}.pyclone.tsv -ac \${pluriploidy[\$index]} -s \${sex} 
             fi
         done
 

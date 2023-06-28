@@ -138,7 +138,6 @@ def main():
     # joining
     joint = maf.join(cnv_data, suffix="_cnv", how="left").df
     joint = joint.drop([x for x in joint.columns if "_cnv" in x], axis=1)
-    joint = joint.drop(["Chromosome", "Start", "End"], axis=1)
     joint["sample_id"] = sampleid
 
     # add cellularity: if not provided, use that from ascat
@@ -155,9 +154,12 @@ def main():
         joint["normal_cn"] = 2
     elif args.sex == "XY":
         joint["normal_cn"] = 2
-        joint.loc[joint["Chromosome"].isin(["chrX", "chrY"]), "normal_cn"] = 1
+        if joint["Chromosome"].isin(["chrX", "chrY"]).any():
+            joint.loc[joint["Chromosome"].isin(["chrX", "chrY"]), "normal_cn"] = 1
     else:
         raise ValueError(f"sex must be XX or XY, provided {args.sex}.")
+
+    joint = joint.drop(["Chromosome", "Start", "End"], axis=1)
 
     joint = joint[
         [
