@@ -173,7 +173,16 @@
             "description": "Configure ascat calling tool",
             "default": "",
             "fa_icon": "fas fa-toolbox",
+            "required": [
+                "ascat_genome_basedir"
+            ],
             "properties": {
+                "ascat_genome_basedir": {
+                    "type": "string",
+                    "fa_icon": "fas fa-greater-than",
+                    "description": "Base folder of ascat database files",
+                    "help_text": "For more details see [here](https://github.com/zhanyinx/clonal_evolution#readme)"
+                },
                 "ascat_min_base_qual": {
                     "type": "number",
                     "default": 20,
