@@ -371,22 +371,6 @@
                     "description": "Show all params when using `--help`",
                     "hidden": true,
                     "help_text": "By default, parameters set as _hidden_ in the schema are not shown on the command line when a user runs with `--help`. Specifying this option will tell the pipeline to show all parameters."
-                },
-                "pipeline": {
-                    "type": "string",
-                    "description": "Pipeline from which VCF has been generated: DRAGEN, sarek or iontorrent supported.",
-                    "fa_icon": "fas fa-pipe"
-                },
-                "biomarkers_ascat_step": {
-                    "type": "string",
-                    "description": "nfcore/sarek step at which you want to start to call CNV using ascat",
-                    "default": "markduplicates",
-                    "fa_icon": "fas fa-nfcore-ascat-step"
-                },
-                "biomarkers_ascat_config": {
-                    "type": "string",
-                    "description": "nfcore/sarek config file to be usedto call CNV using ascat",
-                    "fa_icon": "fas fa-nfcore-ascat-config"
                 }
             }
         }
