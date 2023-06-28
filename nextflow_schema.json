@@ -389,6 +389,9 @@
             "$ref": "#/definitions/pyclone"
         },
         {
+            "$ref": "#/definitions/ascat"
+        },
+        {
             "$ref": "#/definitions/timescape"
         },
         {

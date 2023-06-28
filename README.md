@@ -47,7 +47,7 @@ nextflow run path_to/main.nf -c yourconfig -profile singularity --input samplesh
 
 ## Input
 
-clonal_evolution takes as input a csv samplesheet with 9 columns (very similar to [nf-core/sarek pipeline](https://nf-co.re/sarek/3.2.3/usage))
+clonal_evolution takes as input a csv samplesheet with 8 columns (very similar to [nf-core/sarek pipeline](https://nf-co.re/sarek/3.2.3/usage))
 
 __IMPORTANT: HEADER is required__ 
 
@@ -77,7 +77,7 @@ __IMPORTANT: HEADER is required__
 ## Output
 
 
-variantalker outputs for each sample multiple files organised in 3 folders
+clonal evolution outputs for each sample multiple files organised in 3 folders
 
 
 Output structure:
