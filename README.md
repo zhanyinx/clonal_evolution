@@ -83,7 +83,8 @@ variantalker outputs for each sample multiple files organised in 3 folders
 Output structure:
 
 ```
-params.output
+params.outdir
+
 |-- patient
 |   `-- pyclone
 |       |-- patient.pyclone.tsv (input file for pyclone)
