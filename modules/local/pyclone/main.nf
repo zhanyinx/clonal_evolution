@@ -44,13 +44,14 @@ process generate_pyclone{
                 tumor_bam=\${crams[\$index]}
                 strings=`awk '{if(NR=="'"\$idx"'"+0.) print \$1":"\$2"-"\$3}' list_unique_mutations`
                 start_end_chr=`awk '{if(NR=="'"\$idx"'"+0.) print \$1,\$2,\$3}' list_unique_mutations`
+                gene=`awk '{if(NR=="'"\$idx"'"+0.) print \$6}' list_unique_mutations`
                 alt=`awk '{if(NR=="'"\$idx"'"+0.) print \$5}' list_unique_mutations`
                 altcounts=`samtools mpileup -f $params.fasta -r \$strings \${tumor_bam} |  cut -f 5 | tr '[a-z]' '[A-Z]' | fold -w 1 | sort | uniq -c | awk 'BEGIN{ee=0}{if(\$2=="'"\$alt"'") {print \$1; ee=99}}END{if(ee==0) print "0"}'`
 
                 ref=`awk '{if(NR=="'"\$idx"'"+0.) print \$4}' list_unique_mutations`
                 ref_detected=`samtools mpileup -f $params.fasta -r \$strings \${tumor_bam} | awk '{print \$3}'`
                 refcounts=`samtools mpileup -f $params.fasta -r \$strings \${tumor_bam} | awk '{print \$4 - "'"\$altcounts"'"+0.}'`
-                echo "\$start_end_chr \${tumor_sample} \$refcounts \$altcounts \$strings.\$ref.\$alt" >> tmp_maf
+                echo "\$start_end_chr \${tumor_sample} \$refcounts \$altcounts \$strings.\$ref.\$alt.\$gene" >> tmp_maf
 
             done
 
