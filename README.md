@@ -51,10 +51,10 @@ clonal_evolution takes as input a csv samplesheet with 8 columns (very similar t
 
 __IMPORTANT: HEADER is required__ 
 
-| patient        | sex | status | sample   | cram or bam | crai or bai  | cellularity  | maf       |
-| -------------- | --- | ------ | -------- | ----------- | ------------ | ------------ | --------- |
-| patient1       | XX  | 1      | sampleid | path2/cram  | path2/crai   | 0.1          | path2/maf |
-| .....          | ... | ...... | ........ | ......      | .....        | .....        | ...       |
+| patient        | sex | status | sample   | bam         | bai         | cellularity  | maf       |
+| -------------- | --- | ------ | -------- | ----------- | ----------- | ------------ | --------- |
+| patient1       | XX  | 1      | sampleid | path2/bam   | path2/bai   | 0.1          | path2/maf |
+| .....          | ... | ...... | ........ | ......      | .....       | .....        | ...       |
 
 
 
@@ -66,11 +66,11 @@ __IMPORTANT: HEADER is required__
 
 - sample: sample id
 
-- cram (bam): cram (or bam) file from the sample
+- bam (cram): bam (or cram) file from the sample
 
-- crai (bai): index. of cram (bam)
+- bai (crai): index. of bam (cram)
 
-- cellularity: if available, put the cellularity (number between 0 and 1) from histology. Alternatively leave it empty.
+- cellularity: if available, put the cellularity (number between 0 and 1) from histology. Alternatively leave it empty. Cellularity of normal sample can be left empty.
 
 - maf: annotated vcf, output of variantalker
 
