@@ -244,11 +244,18 @@
                 },
                 "num_clusters": {
                     "type": "number",
-                    "default": 40,
+                    "default": 10,
                     "fa_icon": "fas fa-align-center",
                     "description": "Overwrite pyclone-vi number of clusters.",
                     "hidden": true,
                     "help_text": "For more details, see [here](https://github.com/Roth-Lab/pyclone-vi)."
+                },
+                "keep_indel": {
+                    "type": "boolean",
+                    "description": "If set to true, keep indels in pyclone clonal reconstruction",
+                    "fa_icon": "fas fa-keep_indel",
+                    "hidden": true,
+                    "default": false
                 }
             }
         },

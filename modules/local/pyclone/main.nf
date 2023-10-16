@@ -25,7 +25,11 @@ process generate_pyclone{
 
         for index in \${!mafs[@]}; do
             patientmaf=\${mafs[\$index]}
-            awk -F '\\t' '{if(\$10=="SNP") print \$5"-"\$6"-"\$7"-"\$11"-"\$13"-"\$1"-"\$9"-"\$10}' \$patientmaf >> appo
+            if [ ${params.keep_indel} == "true" ]; then
+                awk -F '\\t' '{print \$5"-"\$6"-"\$7"-"\$11"-"\$13"-"\$1"-"\$9"-"\$10}' \$patientmaf >> appo
+            else
+                awk -F '\\t' '{if(\$10=="SNP") print \$5"-"\$6"-"\$7"-"\$11"-"\$13"-"\$1"-"\$9"-"\$10}' \$patientmaf >> appo
+            fi
         done
 
         cat appo | sort | uniq > list_unique_mutations
