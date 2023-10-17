@@ -252,7 +252,7 @@
                 },
                 "keep_indel": {
                     "type": "boolean",
-                    "description": "If set to true, keep indels in pyclone clonal reconstruction",
+                    "description": "It does not work!!. If set to true, keep indels in pyclone clonal reconstruction",
                     "fa_icon": "fas fa-keep_indel",
                     "hidden": true,
                     "default": false
