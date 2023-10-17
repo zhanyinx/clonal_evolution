@@ -26,14 +26,17 @@ process generate_pyclone{
         for index in \${!mafs[@]}; do
             patientmaf=\${mafs[\$index]}
             if [ ${params.keep_indel} == "true" ]; then
-                awk -F '\\t' '{print \$5"-"\$6"-"\$7"-"\$11"-"\$13"-"\$1"-"\$9"-"\$10}' \$patientmaf >> appo
+                awk -F '\\t' '{if(!(\$1~/^#/) && (\$1!="Hugo_Symbol")) {
+                                print \$5";"\$6";"\$7";"\$11";"\$13";"\$1";"\$9";"\$10
+                            }
+                        }' \$patientmaf >> appo
             else
-                awk -F '\\t' '{if(\$10=="SNP") print \$5"-"\$6"-"\$7"-"\$11"-"\$13"-"\$1"-"\$9"-"\$10}' \$patientmaf >> appo
+                awk -F '\\t' '{if(\$10=="SNP") print \$5";"\$6";"\$7";"\$11";"\$13";"\$1";"\$9";"\$10}' \$patientmaf >> appo
             fi
         done
 
         cat appo | sort | uniq > list_unique_mutations
-        sed -i 's/-/ /g' list_unique_mutations
+        sed -i 's/;/ /g' list_unique_mutations
         line=`wc -l list_unique_mutations | awk '{print \$1}'`
 
         echo "mutation_id sample_id ref_counts alt_counts normal_cn major_cn minor_cn tumour_content" > ${patient}.pyclone.tsv
@@ -49,10 +52,14 @@ process generate_pyclone{
                 strings=`awk '{if(NR=="'"\$idx"'"+0.) print \$1":"\$2"-"\$3}' list_unique_mutations`
                 start_end_chr=`awk '{if(NR=="'"\$idx"'"+0.) print \$1,\$2,\$3}' list_unique_mutations`
                 gene=`awk '{if(NR=="'"\$idx"'"+0.) print \$6}' list_unique_mutations`
-                alt=`awk '{if(NR=="'"\$idx"'"+0.) print \$5}' list_unique_mutations`
+                ref=`awk '{if(NR=="'"\$idx"'"+0.) print \$4}' list_unique_mutations`
+                if [ \$ref == "-" ]; then
+                    alt="+"
+                else
+                    alt=`awk -F ' ' '{if(NR=="'"\$idx"'"+0.) print \$5}' list_unique_mutations`
+                fi
                 altcounts=`samtools mpileup -f $params.fasta -r \$strings \${tumor_bam} |  cut -f 5 | tr '[a-z]' '[A-Z]' | fold -w 1 | sort | uniq -c | awk 'BEGIN{ee=0}{if(\$2=="'"\$alt"'") {print \$1; ee=99}}END{if(ee==0) print "0"}'`
 
-                ref=`awk '{if(NR=="'"\$idx"'"+0.) print \$4}' list_unique_mutations`
                 ref_detected=`samtools mpileup -f $params.fasta -r \$strings \${tumor_bam} | awk '{print \$3}'`
                 refcounts=`samtools mpileup -f $params.fasta -r \$strings \${tumor_bam} | awk '{print \$4 - "'"\$altcounts"'"+0.}'`
                 echo "\$start_end_chr \${tumor_sample} \$refcounts \$altcounts \$strings.\$ref.\$alt.\$gene" >> tmp_maf
