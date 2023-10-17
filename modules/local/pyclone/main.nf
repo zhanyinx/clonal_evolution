@@ -57,6 +57,9 @@ process generate_pyclone{
                     alt="+"
                 else
                     alt=`awk -F ' ' '{if(NR=="'"\$idx"'"+0.) print \$5}' list_unique_mutations`
+                    if [ \$alt == "-" ]; then
+                        alt="*"
+                    fi
                 fi
                 altcounts=`samtools mpileup -f $params.fasta -r \$strings \${tumor_bam} |  cut -f 5 | tr '[a-z]' '[A-Z]' | fold -w 1 | sort | uniq -c | awk 'BEGIN{ee=0}{if(\$2=="'"\$alt"'") {print \$1; ee=99}}END{if(ee==0) print "0"}'`
 
