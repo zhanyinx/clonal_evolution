@@ -32,7 +32,8 @@ git clone git@github.com:zhanyinx/clonal_evolution.git
 Download the necessary databases (ASCAT databases for WES)
 
 ```bash
-wget -r -N --no-parent -nH --cut-dirs=2 -P public_databases https://bioserver.ieo.it/repo/dima/ascat_wes_files/
+wget -r -N --no-parent -nH --cut-dirs=4 -P public_databases/hg38 https://bioserver.ieo.it/repo/dima/hg38/ascat_wes_files/
+wget -r -N --no-parent -nH --cut-dirs=4 -P public_databases/hg19 https://bioserver.ieo.it/repo/dima/hg19/ascat_wes_files/
 ```
 
 Please update the "ascat_genome_basedir" parameter by replacing it with the absolute path of the downloaded databases.
