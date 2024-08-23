@@ -52,10 +52,10 @@ clonal_evolution takes as input a csv samplesheet with 8 columns (very similar t
 
 __IMPORTANT: HEADER is required__ 
 
-| patient        | sex | status | sample   | bam         | bai         | cellularity  | maf       |
-| -------------- | --- | ------ | -------- | ----------- | ----------- | ------------ | --------- |
-| patient1       | XX  | 1      | sampleid | path2/bam   | path2/bai   | 0.1          | path2/maf |
-| .....          | ... | ...... | ........ | ......      | .....       | .....        | ...       |
+| patient        | lane | sex | status | sample   | bam         | bai         | cellularity  | maf       |
+| -------------- | ---- | --- | ------ | -------- | ----------- | ----------- | ------------ | --------- |
+| patient1       | lan1 | XX  | 1      | sampleid | path2/bam   | path2/bai   | 0.1          | path2/maf |
+| .....          | .... | ... | ...... | ........ | ......      | .....       | .....        | ...       |
 
 
 
@@ -68,6 +68,8 @@ __IMPORTANT: HEADER is required__
 - sample: sample id
 
 - bam (cram): bam (or cram) file from the sample
+
+- lane: if multiple lane, add lane
 
 - bai (crai): index. of bam (cram)
 
