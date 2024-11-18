@@ -3,6 +3,7 @@ process convert2citup{
     errorStrategy 'retry'
     maxRetries = 3
     memory { 1.GB * task.attempt }
+    fair true
     input:
         tuple val(patient), file(pyclone)
     output:
@@ -18,10 +19,11 @@ process convert2citup{
 
 process citup{
     cpus 2
-    maxRetries = 2
-    memory { 5.GB * task.attempt }
+    maxRetries = 3
+    memory { 8.GB * task.attempt }
     errorStrategy 'retry'
     publishDir "${params.outdir}/${patient}/citup", mode: "copy"
+    fair true
     input:
         tuple val(patient), file(frequency), file(clusters)
     output:

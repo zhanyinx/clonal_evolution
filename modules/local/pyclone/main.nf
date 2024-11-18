@@ -5,6 +5,8 @@ process generate_pyclone{
     maxRetries = 3
     memory { 1.GB * task.attempt }
     publishDir "${params.outdir}/${patient}/pyclone", mode: "copy"
+    fair true
+    
     input:
         tuple val(patient), val(sex), path(mafs), val(cellularity), path(crams), path(crais), path(pluriploidy), path(cnvs)
     output:
