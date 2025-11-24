@@ -63,11 +63,14 @@ coord = unlist(lapply(str_split(unlist(
 clone_id = values[as.character(mutations_tmp$cluster_id)]
 timepoint = make.names(mutations_tmp$sample_id)
 VAF = mutations_tmp$cellular_prevalence
-mutations = data.frame(chrom=chrom, coord=coord, clone_id=clone_id, timepoint=timepoint,VAF=VAF)
+genes = unlist(lapply(str_split(mutations_tmp$mutation_id, "\\."), "[[", 4))
+genes = paste0(genes, VAF, sep="_")
+mutations = data.frame(chrom=chrom, coord=coord, clone_id=clone_id, timepoint=timepoint, VAF=VAF, genes = genes)
 
 
 clone_prev_general <- setNames(melt((as.matrix(clone_freq_df)), value.name="clonal_prev"), c("clone_id","timepoint", "clonal_prev"))
 reshaped_clone_prevs <- clone_prev_general[,c(2,1,3)]
 obj = timescape(clonal_prev=reshaped_clone_prevs, tree_edges=adj_list_df, mutations=mutations)
+# obj = timescape(clonal_prev=reshaped_clone_prevs, tree_edges=adj_list_df)
 
 saveWidget(obj, file=paste0(opt$output,".html"))
