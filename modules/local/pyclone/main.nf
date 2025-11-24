@@ -4,6 +4,7 @@ process generate_pyclone{
     errorStrategy 'retry'
     maxRetries = 3
     memory { 1.GB * task.attempt }
+    time { 4.h * task.attempt }
     publishDir "${params.outdir}/${patient}/pyclone", mode: "copy"
     fair true
     
@@ -29,11 +30,11 @@ process generate_pyclone{
             patientmaf=\${mafs[\$index]}
             if [ ${params.keep_indel} == "true" ]; then
                 awk -F '\\t' '{if(!(\$1~/^#/) && (\$1!="Hugo_Symbol")) {
-                                print \$5";"\$6";"\$7";"\$11";"\$13";"\$1";"\$9";"\$10
+                                print \$4";"\$5";"\$6";"\$10";"\$12";"\$1";"\$8";"\$9
                             }
                         }' \$patientmaf >> appo
             else
-                awk -F '\\t' '{if(\$10=="SNP") print \$5";"\$6";"\$7";"\$11";"\$13";"\$1";"\$9";"\$10}' \$patientmaf >> appo
+                awk -F '\\t' '{if(\$9=="SNP") print \$4";"\$5";"\$6";"\$10";"\$12";"\$1";"\$8";"\$9}' \$patientmaf >> appo
             fi
         done
 
@@ -90,6 +91,7 @@ process pyclone{
     errorStrategy 'retry'
     maxRetries = 3
     memory { 1.GB * task.attempt }
+    time { 4.h * task.attempt }
     publishDir "${params.outdir}/${patient}/pyclone", mode: "copy"
     input:
         tuple val(patient), path(pyclone)
