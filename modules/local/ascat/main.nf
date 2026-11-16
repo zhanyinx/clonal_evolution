@@ -120,7 +120,7 @@ process ASCAT {
     #purity of the unconstrained fit (see vaf_purity). Ploidy (psi) is then the best
     #goodness of fit over a grid at that fixed rho. A failed fit stops the run.
     fit_free = tryCatch(ascat.runAscat(ascat.bc, gamma=1, img.dir=tempdir()), error=function(e) NULL)
-    free_ok = !is.null(fit_free) && !is.na(fit_free[["rho"]][1])
+    free_ok = isTRUE(!is.null(fit_free) && length(fit_free[["rho"]]) > 0 && !is.na(fit_free[["rho"]][1]))
 
     vaf_purity = function(segs, maf_path) {
         #2 x median VAF of the top VAF cluster (above the largest gap) of autosomal MAF SNVs
