@@ -73,7 +73,7 @@ __IMPORTANT: HEADER is required__
 
 - bai (crai): index. of bam (cram)
 
-- cellularity: tumour purity in (0, 1]. When given, ASCAT is forced to it (rho fixed, ploidy fitted over a grid) and PyClone-VI uses it. When empty, the purity is the VAF purity: 2 x the median VAF of the top VAF cluster (above the largest gap, >= 3 SNVs) of autosomal MAF SNVs in ASCAT 1/1 segments (unconstrained fit), with depth >= 30, alt >= 5, VAF <= 0.6. A purity that cannot be derived, or is 0, stops the run. Leave empty for normal samples.
+- cellularity: tumour purity in (0, 1]. When given, ASCAT is forced to it (rho fixed, ploidy fitted over a grid) and PyClone-VI uses it. When empty, the purity is the VAF purity: 2 x the median VAF of the top VAF cluster (above the largest gap, >= 3 SNVs) of autosomal MAF SNVs in ASCAT 1/1 segments (unconstrained fit), with depth >= 30, alt >= 5, VAF <= 0.6. If the unconstrained ASCAT fit fails, the same rule runs over all autosomal SNVs (`purity_source = vaf_no_ascat_fit`). A purity that cannot be derived, or is 0, stops the run. Leave empty for normal samples.
 
 - maf: annotated vcf, output of variantalker (columns are read by header name)
 

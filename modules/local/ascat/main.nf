@@ -130,9 +130,13 @@ process ASCAT {
         snv = maf[maf[["Variant_Type"]] == "SNP", ]
         chr = sub("^chr", "", snv[["Chromosome"]]); pos = as.numeric(snv[["Start_Position"]])
         alt = as.numeric(snv[["t_alt_count"]]); dp = alt + as.numeric(snv[["t_ref_count"]])
-        segs[["chr"]] = sub("^chr", "", segs[["chr"]])
-        dip = segs[segs[["nMajor"]] == 1 & segs[["nMinor"]] == 1, ]
-        in_dip = mapply(function(c, p) any(dip[["chr"]] == c & dip[["startpos"]] <= p & dip[["endpos"]] >= p), chr, pos)
+        if (is.null(segs)) {
+            in_dip = rep(TRUE, length(chr))  #no fit: every autosomal SNV is taken as copy neutral
+        } else {
+            segs[["chr"]] = sub("^chr", "", segs[["chr"]])
+            dip = segs[segs[["nMajor"]] == 1 & segs[["nMinor"]] == 1, ]
+            in_dip = mapply(function(c, p) any(dip[["chr"]] == c & dip[["startpos"]] <= p & dip[["endpos"]] >= p), chr, pos)
+        }
         ok = chr %in% as.character(1:22) & dp >= 30 & alt >= 5 & in_dip
         v = sort((alt / dp)[ok]); v = v[v <= 0.6]
         n = length(v)
@@ -149,9 +153,9 @@ process ASCAT {
     if (purity_given != "NULL") {
         rho = as.numeric(purity_given); purity_source = "samplesheet"; n_snv = NA; n_top = NA
     } else {
-        if (!free_ok) stop("Unconstrained ASCAT fit failed: no segments to derive the VAF purity; set cellularity in the samplesheet")
-        vp = vaf_purity(fit_free[["segments"]], "${meta.maf}")
-        rho = vp[["purity"]]; purity_source = "vaf"; n_snv = vp[["n"]]; n_top = vp[["n_top"]]
+        vp = vaf_purity(if (free_ok) fit_free[["segments"]] else NULL, "${meta.maf}")
+        rho = vp[["purity"]]; n_snv = vp[["n"]]; n_top = vp[["n_top"]]
+        purity_source = if (free_ok) "vaf" else "vaf_no_ascat_fit"
     }
     if (is.na(rho) || rho <= 0 || rho > 1) stop(paste("Purity", rho, "is not in (0, 1]; stopping"))
 
