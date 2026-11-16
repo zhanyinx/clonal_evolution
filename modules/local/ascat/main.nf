@@ -120,7 +120,7 @@ process ASCAT {
     #purity of the unconstrained fit (see vaf_purity). Ploidy (psi) is then the best
     #goodness of fit over a grid at that fixed rho. A failed fit stops the run.
     fit_free = tryCatch(ascat.runAscat(ascat.bc, gamma=1, img.dir=tempdir()), error=function(e) NULL)
-    free_ok = isTRUE(!is.null(fit_free) && length(fit_free[["rho"]]) > 0 && !is.na(fit_free[["rho"]][1]))
+    free_ok = isTRUE(!is.null(fit_free) && length(fit_free[["purity"]]) > 0 && !is.na(fit_free[["purity"]][1]))
 
     vaf_purity = function(segs, maf_path) {
         #2 x median VAF of the top VAF cluster (above the largest gap) of autosomal MAF SNVs
@@ -140,22 +140,24 @@ process ASCAT {
         ok = chr %in% as.character(1:22) & dp >= 30 & alt >= 5 & in_dip
         v = sort((alt / dp)[ok]); v = v[v <= 0.6]
         n = length(v)
-        if (n < 3) stop(paste("VAF purity: only", n, "heterozygous SNVs in diploid segments; set cellularity in the samplesheet"))
+        if (n < 3) return(NULL)
         top = v
         if (n > 3) {
             g = diff(v); cand = which(n - seq_along(g) >= 3)
             i = cand[which.max(g[cand])]; top = v[(i + 1):n]
         }
-        list(purity = min(1, 2 * median(top)), n = n, n_top = length(top))
+        list(purity = min(1, 2 * median(top)), n = n, n_top = length(top), source = if (is.null(segs)) "vaf_all_autosomal" else "vaf")
     }
 
     purity_given = "${purity}"
     if (purity_given != "NULL") {
         rho = as.numeric(purity_given); purity_source = "samplesheet"; n_snv = NA; n_top = NA
     } else {
-        vp = vaf_purity(if (free_ok) fit_free[["segments"]] else NULL, "${meta.maf}")
-        rho = vp[["purity"]]; n_snv = vp[["n"]]; n_top = vp[["n_top"]]
-        purity_source = if (free_ok) "vaf" else "vaf_no_ascat_fit"
+        #diploid segments of the unconstrained fit; all autosomal SNVs if that fit failed or leaves < 3 SNVs
+        vp = if (free_ok) vaf_purity(fit_free[["segments"]], "${meta.maf}") else NULL
+        if (is.null(vp)) vp = vaf_purity(NULL, "${meta.maf}")
+        if (is.null(vp)) stop("VAF purity: fewer than 3 heterozygous autosomal SNVs; set cellularity in the samplesheet")
+        rho = vp[["purity"]]; n_snv = vp[["n"]]; n_top = vp[["n_top"]]; purity_source = vp[["source"]]
     }
     if (is.na(rho) || rho <= 0 || rho > 1) stop(paste("Purity", rho, "is not in (0, 1]; stopping"))
 
