@@ -73,9 +73,17 @@ __IMPORTANT: HEADER is required__
 
 - bai (crai): index. of bam (cram)
 
-- cellularity: if available, put the cellularity (number between 0 and 1) from histology. Alternatively leave it empty. Cellularity of normal sample can be left empty.
+- cellularity: tumour purity in (0, 1]. When given, ASCAT is forced to it (rho fixed, ploidy fitted over a grid) and PyClone-VI uses it. When empty, the purity is the VAF purity: 2 x the median VAF of the top VAF cluster (above the largest gap, >= 3 SNVs) of autosomal MAF SNVs in ASCAT 1/1 segments (unconstrained fit), with depth >= 30, alt >= 5, VAF <= 0.6. A purity that cannot be derived, or is 0, stops the run. Leave empty for normal samples.
 
-- maf: annotated vcf, output of variantalker
+- maf: annotated vcf, output of variantalker (columns are read by header name)
+
+## PyClone-VI input rules
+
+- SNVs only (`Variant_Type == SNP`); indels are not passed to PyClone-VI.
+- Allele counts: the MAF `t_ref_count`/`t_alt_count` of the sample where the variant was called. For another tumour sample of the same patient whose MAF lacks the variant, counts are re-counted from its CRAM/BAM with `samtools mpileup -B -A -Q20 -q20 -d0` (BAQ off, no depth cap), stripping read-start/end marks and indel sequences.
+- Copy number: the ASCAT segment containing the position (1-based inclusive). Otherwise the flanking segments' state when both agree, else the nearest segment on the same chromosome within `--cn_max_gap` bp (default 1 Mb). Otherwise, or when `major_cn` is 0, the variant is dropped for the patient.
+- Every decision is written to `patient.pyclone.input_report.tsv`; the ASCAT purity/ploidy fit of every sample is collected in `ascat/purity_fit.tsv`.
+- `--skip_phylogeny true` stops after PyClone-VI (no CITUP/TimeScape).
 
 ## Output
 
@@ -91,6 +99,7 @@ params.outdir
 |-- patient
 |   `-- pyclone
 |       |-- patient.pyclone.tsv (input file for pyclone)
+|       |-- patient.pyclone.input_report.tsv (count and copy-number source per variant and sample)
 |       |-- patient.pyclone.output.tsv (cellular prevalence estimates from pyclone)
 |   `-- citup
 |       |-- patient.h5 (citup model)

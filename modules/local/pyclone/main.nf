@@ -3,85 +3,38 @@ process generate_pyclone{
     cpus '1'
     errorStrategy 'retry'
     maxRetries = 3
-    memory { 1.GB * task.attempt }
+    memory { 2.GB * task.attempt }
     time { 4.h * task.attempt }
     publishDir "${params.outdir}/${patient}/pyclone", mode: "copy"
     fair true
-    
+
     input:
-        tuple val(patient), val(sex), path(mafs), val(cellularity), path(crams), path(crais), path(pluriploidy), path(cnvs)
+        tuple val(patient), val(sample_ids), val(sex), val(mafs), val(cellularity), path(crams), path(crais), path(pluriploidy), path(cnvs)
     output:
-       tuple val(patient), path("*.pyclone.tsv")
+       tuple val(patient), path("${patient}.pyclone.tsv"), emit: input
+       path("${patient}.pyclone.input_report.tsv"), emit: report
     script:
+    // groupTuple gives lists; a single staged file may arrive as a bare path
+    def ids = [sample_ids].flatten()
+    def sexes = [sex].flatten()
+    def maf_list = [mafs].flatten()
+    def cram_list = [crams].flatten()
+    def pp_list = [pluriploidy].flatten()
+    def cnv_list = [cnvs].flatten()
+    def rows = ['sample_id\tmaf\talignment\tcnvs\tpurityploidy\tsex']
+    ids.eachWithIndex { id, i ->
+        rows << [id, maf_list[i], cram_list[i].name, cnv_list[i].name, pp_list[i].name, sexes[i]].join('\t')
+    }
     """
-        if [ -f appo ]; then
-            rm appo
-        fi
-
-        IFS=' ' read -r -a mafs <<< "$mafs"
-        IFS=' ' read -r -a cellularity <<< "$cellularity"
-        IFS=' ' read -r -a crams <<< "$crams"
-        IFS=' ' read -r -a crais <<< "$crais"
-        IFS=' ' read -r -a pluriploidy <<< "$pluriploidy"
-        IFS=' ' read -r -a cnvs <<< "$cnvs"
-        IFS=' ' read -r -a sexes <<< "$sex"
-
-        for index in \${!mafs[@]}; do
-            patientmaf=\${mafs[\$index]}
-            if [ ${params.keep_indel} == "true" ]; then
-                awk -F '\\t' '{if(!(\$1~/^#/) && (\$1!="Hugo_Symbol")) {
-                                print \$4";"\$5";"\$6";"\$10";"\$12";"\$1";"\$8";"\$9
-                            }
-                        }' \$patientmaf >> appo
-            else
-                awk -F '\\t' '{if(\$9=="SNP") print \$4";"\$5";"\$6";"\$10";"\$12";"\$1";"\$8";"\$9}' \$patientmaf >> appo
-            fi
-        done
-
-        cat appo | sort | uniq > list_unique_mutations
-        sed -i 's/;/ /g' list_unique_mutations
-        line=`wc -l list_unique_mutations | awk '{print \$1}'`
-
-        echo "mutation_id sample_id ref_counts alt_counts normal_cn major_cn minor_cn tumour_content" > ${patient}.pyclone.tsv
-        sed -i 's/ /\\t/g' ${patient}.pyclone.tsv
-
-        re='^[0-9]+\$'
-
-        for index in \${!mafs[@]}; do
-            echo "Chromosome Start_Position End_Position Tumor_Sample_Barcode t_ref_count t_alt_count Genome_Change" > tmp_maf
-            tumor_sample=`basename \${mafs[\$index]}`
-            for idx in `seq 1 \$line`; do
-                tumor_bam=\${crams[\$index]}
-                strings=`awk '{if(NR=="'"\$idx"'"+0.) print \$1":"\$2"-"\$3}' list_unique_mutations`
-                start_end_chr=`awk '{if(NR=="'"\$idx"'"+0.) print \$1,\$2,\$3}' list_unique_mutations`
-                gene=`awk '{if(NR=="'"\$idx"'"+0.) print \$6}' list_unique_mutations`
-                ref=`awk '{if(NR=="'"\$idx"'"+0.) print \$4}' list_unique_mutations`
-                if [ \$ref == "-" ]; then
-                    alt="+"
-                else
-                    alt=`awk -F ' ' '{if(NR=="'"\$idx"'"+0.) print \$5}' list_unique_mutations`
-                    if [ \$alt == "-" ]; then
-                        alt="*"
-                    fi
-                fi
-                altcounts=`samtools mpileup -f $params.fasta -r \$strings \${tumor_bam} |  cut -f 5 | tr '[a-z]' '[A-Z]' | fold -w 1 | sort | uniq -c | awk 'BEGIN{ee=0}{if(\$2=="'"\$alt"'") {print \$1; ee=99}}END{if(ee==0) print "0"}'`
-
-                ref_detected=`samtools mpileup -f $params.fasta -r \$strings \${tumor_bam} | awk '{print \$3}'`
-                refcounts=`samtools mpileup -f $params.fasta -r \$strings \${tumor_bam} | awk '{print \$4 - "'"\$altcounts"'"+0.}'`
-                echo "\$start_end_chr \${tumor_sample} \$refcounts \$altcounts \$strings.\$ref.\$alt.\$gene" >> tmp_maf
-
-            done
-
-            sed -i 's, ,\\t,g' tmp_maf
-            sex=`echo \${sexes[\$index]}  | sed 's,\\[,,g' | sed 's,\\],,g' | sed 's/,//g'`
-            if [[ \${cellularity[\$index]} =~ \$re ]] ; then
-                cell=`echo \${cellularity[\$index]}   | sed 's,\\[,,g' | sed 's,\\],,g' | sed 's/,//g'`
-                create_input4pyclone.py -as \${cnvs[\$index]} -c \${cell} -m tmp_maf -o ${patient}.pyclone.tsv -s \${sex} 
-            else
-                create_input4pyclone.py -as \${cnvs[\$index]} -m tmp_maf -o ${patient}.pyclone.tsv -ac \${pluriploidy[\$index]} -s \${sex} 
-            fi
-        done
-
+    cat > samples.tsv <<'END_OF_SAMPLES'
+${rows.join('\n')}
+END_OF_SAMPLES
+    create_input4pyclone.py \
+        --samples samples.tsv \
+        --fasta ${params.fasta} \
+        --output ${patient}.pyclone.tsv \
+        --report ${patient}.pyclone.input_report.tsv \
+        --max_gap ${params.cn_max_gap}
     """
 }
 

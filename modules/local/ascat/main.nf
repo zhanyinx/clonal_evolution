@@ -19,7 +19,8 @@ process ASCAT {
     path(rt_file)   // optional
 
     output:
-    tuple val(meta.patient), val(meta.sex), val(meta.maf), val(meta.cellularity), path("${input_tumor}"), path("${index_tumor}"), path("*purityploidy.txt"),  path("*cnvs.txt"),          emit: cram
+    tuple val(meta.patient), val(meta.tumor_id), val(meta.sex), val(meta.maf), val(meta.cellularity), path("${input_tumor}"), path("${index_tumor}"), path("*purityploidy.txt"),  path("*cnvs.txt"),          emit: cram
+    path("*.purity_fit.tsv"), emit: purity_fit
 
     when:
     task.ext.when == null || task.ext.when
@@ -115,17 +116,64 @@ process ASCAT {
     #Plot the segmented data
     ascat.plotSegmentedData(ascat.bc)
 
-    #Run ASCAT to fit every tumor to a model, inferring ploidy, normal cell contamination, and discrete copy numbers
-    #If psi and rho are manually set:
-    if (!is.null($purity) && !is.null($ploidy)){
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity, psi_manual=$ploidy)
-    } else if(!is.null($purity) && is.null($ploidy)){
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, rho_manual=$purity)
-    } else if(!is.null($ploidy) && is.null($purity)){
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1, psi_manual=$ploidy)
-    } else {
-        ascat.output <- ascat.runAscat(ascat.bc, gamma=1)
+    #Fit. Purity (rho) is forced: the samplesheet cellularity when given, else the VAF
+    #purity of the unconstrained fit (see vaf_purity). Ploidy (psi) is then the best
+    #goodness of fit over a grid at that fixed rho. A failed fit stops the run.
+    fit_free = tryCatch(ascat.runAscat(ascat.bc, gamma=1, img.dir=tempdir()), error=function(e) NULL)
+    free_ok = !is.null(fit_free) && !is.na(fit_free[["rho"]][1])
+
+    vaf_purity = function(segs, maf_path) {
+        #2 x median VAF of the top VAF cluster (above the largest gap) of autosomal MAF SNVs
+        #in ASCAT 1/1 segments, depth >= 30, alt >= 5, VAF <= 0.6; top cluster >= 3 SNVs.
+        lines = readLines(maf_path)
+        maf = read.delim(text=lines[!startsWith(lines, "#")], stringsAsFactors=FALSE, quote="", check.names=FALSE)
+        snv = maf[maf[["Variant_Type"]] == "SNP", ]
+        chr = sub("^chr", "", snv[["Chromosome"]]); pos = as.numeric(snv[["Start_Position"]])
+        alt = as.numeric(snv[["t_alt_count"]]); dp = alt + as.numeric(snv[["t_ref_count"]])
+        segs[["chr"]] = sub("^chr", "", segs[["chr"]])
+        dip = segs[segs[["nMajor"]] == 1 & segs[["nMinor"]] == 1, ]
+        in_dip = mapply(function(c, p) any(dip[["chr"]] == c & dip[["startpos"]] <= p & dip[["endpos"]] >= p), chr, pos)
+        ok = chr %in% as.character(1:22) & dp >= 30 & alt >= 5 & in_dip
+        v = sort((alt / dp)[ok]); v = v[v <= 0.6]
+        n = length(v)
+        if (n < 3) stop(paste("VAF purity: only", n, "heterozygous SNVs in diploid segments; set cellularity in the samplesheet"))
+        top = v
+        if (n > 3) {
+            g = diff(v); cand = which(n - seq_along(g) >= 3)
+            i = cand[which.max(g[cand])]; top = v[(i + 1):n]
+        }
+        list(purity = min(1, 2 * median(top)), n = n, n_top = length(top))
     }
+
+    purity_given = "${purity}"
+    if (purity_given != "NULL") {
+        rho = as.numeric(purity_given); purity_source = "samplesheet"; n_snv = NA; n_top = NA
+    } else {
+        if (!free_ok) stop("Unconstrained ASCAT fit failed: no segments to derive the VAF purity; set cellularity in the samplesheet")
+        vp = vaf_purity(fit_free[["segments"]], "${meta.maf}")
+        rho = vp[["purity"]]; purity_source = "vaf"; n_snv = vp[["n"]]; n_top = vp[["n_top"]]
+    }
+    if (is.na(rho) || rho <= 0 || rho > 1) stop(paste("Purity", rho, "is not in (0, 1]; stopping"))
+
+    best = NULL; best_gof = -Inf; best_psi = NA
+    psi_grid = if ("${ploidy}" != "NULL") as.numeric("${ploidy}") else seq(1.5, 5.5, by=0.05)
+    for (ps in psi_grid) {
+        f = tryCatch(ascat.runAscat(ascat.bc, gamma=1, rho_manual=rho, psi_manual=ps, img.dir=tempdir()), error=function(e) NULL)
+        if (!is.null(f) && !is.na(f[["goodnessOfFit"]][1]) && f[["goodnessOfFit"]][1] > best_gof) {
+            best = f; best_gof = f[["goodnessOfFit"]][1]; best_psi = ps
+        }
+    }
+    if (is.null(best)) stop(paste("ASCAT fit at forced purity", rho, "failed for every ploidy"))
+    #re-run the chosen fit to write its plots to the work dir
+    ascat.output = ascat.runAscat(ascat.bc, gamma=1, rho_manual=rho, psi_manual=best_psi)
+
+    fit = data.frame(sample="${meta.tumor_id}", purity=rho, purity_source=purity_source,
+                     vaf_purity_snvs=n_snv, vaf_purity_top=n_top, psi=best_psi, goodness_of_fit=best_gof,
+                     ploidy=ascat.output[["ploidy"]][1],
+                     free_purity=if (free_ok) fit_free[["aberrantcellfraction"]][1] else NA,
+                     free_ploidy=if (free_ok) fit_free[["ploidy"]][1] else NA,
+                     free_goodness_of_fit=if (free_ok) fit_free[["goodnessOfFit"]][1] else NA)
+    write.table(fit, file=paste0("$prefix", ".purity_fit.tsv"), sep="\t", quote=F, row.names=F)
 
     #Extract metrics from ASCAT profiles
     QC = ascat.metrics(ascat.bc,ascat.output)
@@ -137,14 +185,8 @@ process ASCAT {
     cnvs=ascat.output[["segments"]][2:6]
     write.table(cnvs, file=paste0("$prefix",".cnvs.txt"), sep="\t", quote=F, row.names=F, col.names=T)
 
-    #Write out purity and ploidy info
-    summary <- tryCatch({
-            matrix(c(ascat.output[["aberrantcellfraction"]], ascat.output[["ploidy"]]), ncol=2, byrow=TRUE)}, error = function(err) {
-                # error handler picks up where error was generated
-                print(paste("Could not find optimal solution:  ",err))
-                return(matrix(c(0,0),nrow=1,ncol=2,byrow = TRUE))
-        }
-    )
+    #Write out purity and ploidy info (the forced purity)
+    summary = matrix(c(rho, ascat.output[["ploidy"]][1]), ncol=2, byrow=TRUE)
     colnames(summary) <- c("AberrantCellFraction","Ploidy")
     write.table(summary, file=paste0("$prefix",".purityploidy.txt"), sep="\t", quote=F, row.names=F, col.names=T)
 
@@ -173,6 +215,7 @@ process ASCAT {
     echo stub > ${prefix}.normal_alleleFrequencies_chr21.txt
     echo stub > ${prefix}.normal_alleleFrequencies_chr22.txt
     echo stub > ${prefix}.purityploidy.txt
+    echo stub > ${prefix}.purity_fit.tsv
     echo stub > ${prefix}.segments.txt
     echo stub > ${prefix}.tumour.ASPCF.png
     echo stub > ${prefix}.tumour.sunrise.png

@@ -76,11 +76,14 @@ workflow CLONAL_EVOLUTION {
             [ meta, normal[2], normal[3], tumor[2], tumor[3] ]
         }
     ASCAT(cram_variant_calling_pair, generate_ascat_alleles.out.first(), generate_ascat_loci.out.first(), Channel.fromPath(params.target).first(), Channel.fromPath(params.fasta).first(), generate_ascat_gc.out.first(), generate_ascat_rt.out.first())
+    ASCAT.out.purity_fit.collectFile(name: 'purity_fit.tsv', keepHeader: true, skip: 1, storeDir: "${params.outdir}/ascat")
     generate_pyclone(ASCAT.out.cram.groupTuple())
-    pyclone(generate_pyclone.out)
-    convert2citup(pyclone.out)
-    citup(convert2citup.out[0])
-    timescape(citup.out, convert2citup.out[1], pyclone.out)
+    pyclone(generate_pyclone.out.input)
+    if (!params.skip_phylogeny) {
+        convert2citup(pyclone.out)
+        citup(convert2citup.out[0])
+        timescape(citup.out, convert2citup.out[1], pyclone.out)
+    }
 }
 
 
@@ -89,6 +92,17 @@ workflow CLONAL_EVOLUTION {
     Functions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+def parse_cellularity(value, sample) {
+    // empty -> null (purity then comes from the VAF rule in ASCAT); else a number in (0, 1]
+    if (value == null || value.toString().trim() == '') return null
+    def v
+    try { v = value.toString().trim() as BigDecimal } catch (all) {
+        error("Sample ${sample}: cellularity '${value}' is not a number.")
+    }
+    if (v <= 0 || v > 1) error("Sample ${sample}: cellularity ${v} must be in (0, 1].")
+    return v
+}
+
 def extract_csv(csv_file) {
 
     // check that the sample sheet is not 1 line or less, because it'll skip all subsequent checks if so.
@@ -185,7 +199,7 @@ def extract_csv(csv_file) {
             meta.read_group = read_group.toString()
             meta.data_type  = 'bam'
             meta.maf = row.maf
-            meta.cellularity = row.cellularity
+            meta.cellularity = (meta.status == 1) ? parse_cellularity(row.cellularity, row.sample) : null
 
             meta.size       = 1 // default number of splitted fastq
 
@@ -203,7 +217,7 @@ def extract_csv(csv_file) {
 
             meta.data_type  = 'cram'
             meta.maf = row.maf
-            meta.cellularity = row.cellularity
+            meta.cellularity = (meta.status == 1) ? parse_cellularity(row.cellularity, row.sample) : null
 
             if(cram.getExtension() != 'cram'){
                 error("A column with name 'cram' was specified, but it contains a file not ending on '.cram': " + cram.getName())
